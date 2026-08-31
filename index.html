@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castaway's Horizon - 2D Island Survival</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Top HUD: Survival Stats & Environment Time/Weather -->
+    <div id="topHUD">
+        <div class="stats-container">
+            <div class="stat-row">
+                <span class="stat-icon">❤️</span>
+                <div class="bar-bg"><div id="healthFill" class="bar-fill"></div></div>
+                <span id="healthText" class="stat-text">100/100</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">🍖</span>
+                <div class="bar-bg"><div id="hungerFill" class="bar-fill"></div></div>
+                <span id="hungerText" class="stat-text">100%</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">💧</span>
+                <div class="bar-bg"><div id="thirstFill" class="bar-fill"></div></div>
+                <span id="thirstText" class="stat-text">100%</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">⚡</span>
+                <div class="bar-bg"><div id="energyFill" class="bar-fill"></div></div>
+                <span id="energyText" class="stat-text">100%</span>
+            </div>
+        </div>
+
+        <div class="env-pill">
+            <div class="pill-item"><span id="dayIndicator">Day 1</span></div>
+            <div class="pill-item"><span id="timeIndicator">08:00 (Morning)</span></div>
+            <div class="pill-item"><span id="weatherIndicator">☀️ Clear</span></div>
+            <div class="pill-item"><span id="tempIndicator" class="temp-normal">🌡️ Normal</span></div>
+        </div>
+    </div>
+
+    <!-- Active Quest Tracker -->
+    <div id="questTracker">
+        <h3>1. Stranded on the Shore</h3>
+        <p>Forage basic resources around the island beach.</p>
+        <div class="quest-tasks">
+            <div class="quest-task">○ Gather Palm Wood: 0/5</div>
+        </div>
+    </div>
+
+    <!-- Controls Helper Hint -->
+    <div id="controlsHint">
+        [WASD] Move &nbsp;|&nbsp; [Shift] Sprint &nbsp;|&nbsp; [Left Click / Space] Action &nbsp;|&nbsp; [E] Inventory &nbsp;|&nbsp; [K] Skills &nbsp;|&nbsp; [J] Field Guide &nbsp;|&nbsp; [L] Achievements &nbsp;|&nbsp; [F] Interact
+    </div>
+
+    <!-- Bottom Quickslot Hotbar -->
+    <div id="bottomHUD">
+        <div id="hotbarSlots" style="display: flex; gap: 8px;"></div>
+    </div>
+
+    <!-- === MODAL: INVENTORY & CRAFTING SCREEN === -->
+    <div id="inventoryModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>🎒 Inventory & Workshop</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <div class="inv-craft-split">
+                <!-- Left: Backpack & Equipment -->
+                <div class="inventory-grid-container">
+                    <h3>Backpack (24 Slots)</h3>
+                    <div id="inventoryGrid" class="grid-slots"></div>
+                    
+                    <div class="equipment-row">
+                        <div class="equip-slot-wrap">
+                            <div id="equip_mainhand" class="inventory-slot"></div>
+                            <span>Main Hand</span>
+                        </div>
+                        <div class="equip-slot-wrap">
+                            <div id="equip_offhand" class="inventory-slot"></div>
+                            <span>Off Hand (Torch)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Crafting Station -->
+                <div class="crafting-container">
+                    <h3>Crafting Recipes</h3>
+                    <div class="crafting-tabs">
+                        <button class="tab-btn active" onclick="window.Game.renderCraftingModal('all')">All</button>
+                        <button class="tab-btn" onclick="window.Game.renderCraftingModal('tools')">Tools</button>
+                        <button class="tab-btn" onclick="window.Game.renderCraftingModal('weapons')">Weapons</button>
+                        <button class="tab-btn" onclick="window.Game.renderCraftingModal('structures')">Base</button>
+                        <button class="tab-btn" onclick="window.Game.renderCraftingModal('escape')">Escape</button>
+                    </div>
+                    <div id="craftingList" class="crafting-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL: CHEST STORAGE === -->
+    <div id="chestModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📦 Wooden Storage Chest</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 14px;">Click an item in the chest to transfer it to your inventory.</p>
+            <div id="chestGrid" class="grid-slots" style="grid-template-columns: repeat(6, 1fr);"></div>
+        </div>
+    </div>
+
+    <!-- === MODAL: FURNACE & SMELTING === -->
+    <div id="furnaceModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>🔥 Smelting Furnace & Campfire</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <div id="furnaceRecipes" class="crafting-list"></div>
+        </div>
+    </div>
+
+    <!-- === MODAL: RADIO TOWER REPAIR & ESCAPE === -->
+    <div id="radioModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>📡 Island Radio Tower Transceiver</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 16px;">
+                Install all 4 salvage components to broadcast an emergency distress signal to the maritime rescue team!
+            </p>
+            <div id="radioComponentsList" class="radio-parts-list"></div>
+            <button id="transmitBtn" class="transmit-btn">🚨 BROADCAST SOS DISTRESS BEACON</button>
+        </div>
+    </div>
+
+    <!-- === MODAL: PAUSE MENU === -->
+    <div id="pauseModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 400px; text-align: center;">
+            <div class="modal-header" style="justify-content: center;">
+                <h2>⏸️ Game Paused</h2>
+            </div>
+            <div class="menu-btn-stack">
+                <button class="menu-btn" onclick="window.Game.togglePause()">▶ Resume Game</button>
+                <button class="menu-btn" onclick="window.Game.storage.saveGame(window.Game); window.Game.togglePause();">💾 Save Game</button>
+                <button class="menu-btn" onclick="const muted = !window.Sound.toggleMute(); this.textContent = muted ? '🔇 Sound: Off' : '🔊 Sound: On';">🔊 Sound: On</button>
+                <button class="menu-btn btn-danger" onclick="if (confirm('Start a fresh game? Current save will be wiped!')) window.Game.restartGame();">🔄 New Game (Reset Save)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === MODAL: GAME OVER === -->
+    <div id="gameOverModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 450px; text-align: center;">
+            <h2 style="color: #ef4444; font-size: 26px; margin-bottom: 8px;">💀 You Perished</h2>
+            <p id="deathCause" style="color: #94a3b8; font-size: 14px; margin-bottom: 16px;">Cause of death: Unknown</p>
+            <div id="deathStats" style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; text-align: left; line-height: 1.8;"></div>
+            <button class="menu-btn" style="background: #3b82f6; width: 100%;" onclick="window.Game.restartGame()">🔄 Try Again</button>
+        </div>
+    </div>
+
+    <!-- === MODAL: SKILL TREE & MASTERY === -->
+    <div id="skillsModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 750px;">
+            <div class="modal-header">
+                <h2>⭐ RPG Skill Trees & Masteries</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="skillPointsBadge" style="background: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;">Available Points: 3</span>
+                    <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+                </div>
+            </div>
+            <div id="skillsTreeContainer" style="display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- === MODAL: ENCYCLOPEDIA & FIELD GUIDE === -->
+    <div id="encyclopediaModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>📖 Field Guide & Island Bestiary</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <div class="crafting-tabs">
+                <button class="tab-btn active" onclick="window.ExtendedUI.renderEncyclopediaUI('flora')">Flora & Botany</button>
+                <button class="tab-btn" onclick="window.ExtendedUI.renderEncyclopediaUI('fauna')">Fauna & Bestiary</button>
+                <button class="tab-btn" onclick="window.ExtendedUI.renderEncyclopediaUI('minerals')">Minerals & Ores</button>
+                <button class="tab-btn" onclick="window.ExtendedUI.renderEncyclopediaUI('survival_tips')">Survival Tips</button>
+                <button class="tab-btn" onclick="window.ExtendedUI.renderEncyclopediaUI('lore_logs')">Lore Logs</button>
+            </div>
+            <div id="encyclopediaEntries" style="display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- === MODAL: ACHIEVEMENTS & MILESTONES === -->
+    <div id="achievementsModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 750px;">
+            <div class="modal-header">
+                <h2>🏆 Achievements & Milestones</h2>
+                <button class="close-btn" onclick="window.Game.closeModal()">✕</button>
+            </div>
+            <div id="achievementsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- === MODAL: VICTORY ESCAPE === -->
+    <div id="victoryModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px; text-align: center;">
+            <h2 style="color: #38ef7d; font-size: 28px; margin-bottom: 8px;">🚁 Island Escaped!</h2>
+            <p style="color: #cbd5e1; font-size: 14px; margin-bottom: 16px;">
+                The rescue helicopter heard your distress transmission and extracted you from the island safely!
+            </p>
+            <div id="victoryStats" style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; text-align: left; line-height: 1.8;"></div>
+            <div class="menu-btn-stack">
+                <button class="menu-btn" style="background: #10b981;" onclick="window.Game.closeModal(); window.Game.isVictory = false;">🏖️ Continue in Sandbox Mode</button>
+                <button class="menu-btn" onclick="window.Game.restartGame()">🔄 Play Again from Beginning</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Scripts In Dependency Order -->
+    <script src="js/audio.js"></script>
+    <script src="js/audio_music.js"></script>
+    <script src="js/master_audio_synthesis.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/item_catalogue.js"></script>
+    <script src="js/master_item_registry.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/world_generator_advanced.js"></script>
+    <script src="js/dungeons.js"></script>
+    <script src="js/survival.js"></script>
+    <script src="js/weather.js"></script>
+    <script src="js/weather_expanded.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/skills.js"></script>
+    <script src="js/master_skills_achievements.js"></script>
+    <script src="js/encyclopedia.js"></script>
+    <script src="js/story_logs.js"></script>
+    <script src="js/island_chronicles.js"></script>
+    <script src="js/crafting.js"></script>
+    <script src="js/crafting_expanded.js"></script>
+    <script src="js/master_crafting_recipes.js"></script>
+    <script src="js/building.js"></script>
+    <script src="js/fishing.js"></script>
+    <script src="js/combat.js"></script>
+    <script src="js/fauna_database.js"></script>
+    <script src="js/master_fauna_flora.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/quests.js"></script>
+    <script src="js/minimap.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui_screens.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
